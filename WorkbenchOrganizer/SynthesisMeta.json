@@ -1,0 +1,11 @@
+{
+  "Nickname": "WorkbenchOrganizer",
+  "Visibility": "Visible",
+  "OneLineDescription": "",
+  "LongDescription": "",
+  "PreferredAutoVersioning": "Default",
+  "RequiredMods": [
+    "OWM-Master.esl"
+  ],
+  "TargetedReleases": []
+}
