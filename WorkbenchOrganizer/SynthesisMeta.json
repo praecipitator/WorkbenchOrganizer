@@ -1,8 +1,8 @@
 {
   "Nickname": "WorkbenchOrganizer",
   "Visibility": "Visible",
-  "OneLineDescription": "",
-  "LongDescription": "",
+  "OneLineDescription": "WorkbenchOrganizer",
+  "LongDescription": "Autopatches workbench recipes, for usage with Organized Workbench Menu.\r\n\r\nRequires Organized Workbench Menu: https://www.nexusmods.com/fallout4/mods/32588",
   "PreferredAutoVersioning": "Default",
   "RequiredMods": [
     "OWM-Master.esl"
