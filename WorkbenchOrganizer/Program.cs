@@ -250,7 +250,7 @@ namespace WorkbenchOrganizer
                 return;
             }
 
-            if(IsWorkbench(cobj, craftRes))
+            if(IsWorkbenchRecipe(cobj, craftRes))
             {
                 ProcessWorkbench(cobj, craftRes);
                 return;
@@ -274,16 +274,19 @@ namespace WorkbenchOrganizer
         }
         private void ProcessWorkbench(IConstructibleObjectGetter cobj, IConstructibleObjectTargetGetter result, bool fromBacklog = false)
         {
+            /*
             if(cobj.WorkbenchKeyword.IsNull)
             {
                 return;
             }
+            */
 
             if(null != cobj.Categories && cobj.Categories.Count > 0)
             {
                 // for workbenches, I want to always process them, unless they happen to have one of my KWs already
                 if(MyCategoryKeywords.Any(myKw => cobj.Categories.Contains(myKw)))
                 {
+                    Console.WriteLine("Skipping "+cobj.EditorID+", it should have a proper category already");
                     return;
                 }
             }
@@ -365,11 +368,9 @@ namespace WorkbenchOrganizer
             // finally creating
             Console.WriteLine("Creating new submenu for "+benchName);
 
-            
-
-            var newKeyword = state.PatchMod.Keywords.AddNew(bnamEdid);
+            var newKeyword = state.PatchMod.Keywords.AddNew(newSubmenuEdid);
             // set all the things
-            newKeyword.EditorID = bnamEdid;
+            newKeyword.EditorID = newSubmenuEdid;
             newKeyword.Type = Keyword.TypeEnum.RecipeFilter;
             newKeyword.Name = benchName;
 
@@ -386,7 +387,9 @@ namespace WorkbenchOrganizer
             // this shouldn't actually happen. cobj's categories should have been checked and found to exist before
             newCobj.Categories ??= new();
 
-            newCobj.Categories = newCobj.Categories.Select(kw => fnamsToReplace.Contains(kw) ? targetKeyword : kw).ToExtendedList();
+            // first, remove the "bad" categories
+            newCobj.Categories = newCobj.Categories.Where(kw => !fnamsToReplace.Contains(kw)).ToExtendedList();
+            newCobj.Categories.Add(targetKeyword);
         }
 
         private KeywordLink FindWorkbenchKeyword(IConstructibleObjectTargetGetter bench)
@@ -486,7 +489,7 @@ namespace WorkbenchOrganizer
         /// <param name="cobj"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        private static bool IsWorkbench(IConstructibleObjectGetter cobj, IConstructibleObjectTargetGetter result)
+        private static bool IsWorkbenchRecipe(IConstructibleObjectGetter cobj, IConstructibleObjectTargetGetter result)
         {
             if(null == cobj.Categories)
             {
