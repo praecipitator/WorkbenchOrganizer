@@ -116,7 +116,10 @@ namespace WorkbenchOrganizer
 
         private readonly IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
 
-        private PatcherSettings Settings;
+        private readonly PatcherSettings Settings;
+
+        // the new generated quest
+        private Quest? newQuest = null;
 
         public Processor(IPatcherState<IFallout4Mod, IFallout4ModGetter> state, PatcherSettings Settings)
         {
@@ -145,6 +148,9 @@ namespace WorkbenchOrganizer
 
         public void Process()
         {
+            // ALWAYS create quest first, so that we (hopefully) will never ever get a FormID mismatch where the Quest ends up in a FormList
+            CreateQuest();
+
             var allCobjs = state.LoadOrder.PriorityOrder.ConstructibleObject().WinningOverrides();
             foreach (var cobj in allCobjs)
             {
@@ -167,42 +173,48 @@ namespace WorkbenchOrganizer
             // no point of adding the quest if we don't have any menus to add
             if(NewKeywordsToAdd.Count > 0)
             {
-                CreateQuest();
+                FillQuest();
             }
         }
 
         private void CreateQuest()
         {
-            //var resolvedQuest = state.LinkCache.TryResolve<IQuestGetter>(OWM_Master.Quest.pra_SmmOrganizedMenuInstaller);
             var resolvedQuest = OWM_Master.Quest.pra_SmmOrganizedMenuInstaller.TryResolve(state.LinkCache);
-            if(null == resolvedQuest)
+            if (null == resolvedQuest)
             {
                 throw new InvalidDataException("pra_SmmOrganizedMenuInstaller doesn't resolve!");
             }
 
             var patchFileName = state.PatchMod.ModKey.FileName.String;
 
-            
+
             var newEdid = (Settings.QuestPrefix + patchFileName.Replace('.', '-')).ToEdid();
 
-            var newQuest = state.PatchMod.Quests.DuplicateInAsNewRecord(resolvedQuest, newEdid);
+            newQuest = state.PatchMod.Quests.DuplicateInAsNewRecord(resolvedQuest, newEdid);
             newQuest.EditorID = newEdid;
 
             newQuest.Data ??= new();
 
             newQuest.Data.Flags.SetFlag(Quest.Flag.RunOnce, false);
+        }
 
+        private void FillQuest()
+        {
+            if(newQuest == null)
+            {
+                throw new InvalidDataException("Failed to generate the quest. This is bad!");
+            }
             // script
             var questScript = newQuest.VirtualMachineAdapter?.Scripts.Find(script => script.Name == "pra:OrganizedWorkbenchMenuMain");
-            if(questScript == null)
+            if (questScript == null)
             {
                 // this is a bad bug
                 throw new InvalidDataException("pra_SmmOrganizedMenuInstaller is missing it's script!");
             }
 
             //questScript.Properties.find
+            var patchFileName = state.PatchMod.ModKey.FileName.String;
 
-            
             questScript.SetScriptProperty("ModName", Settings.smmSettings.ModName);
             questScript.SetScriptProperty("Author", Settings.smmSettings.Author);
             questScript.SetScriptProperty("PluginName", patchFileName);
@@ -219,13 +231,12 @@ namespace WorkbenchOrganizer
             // finally the array of struct
             var MenusProp = new ScriptStructListProperty();
 
-            foreach(var kw in NewKeywordsToAdd)
+            foreach (var kw in NewKeywordsToAdd)
             {
                 MenusProp.Structs.Add(CreateMenuStruct(kw.ToLink()));
             }
 
             questScript.SetScriptProperty("Menus", MenusProp);
-
         }
 
         private static ScriptEntryStructs CreateMenuStruct(IFormLink<IFallout4MajorRecordGetter> ModMenu)
