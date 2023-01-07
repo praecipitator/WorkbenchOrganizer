@@ -7,5 +7,7 @@
   "RequiredMods": [
     "OWM-Master.esl"
   ],
-  "TargetedReleases": []
+  "TargetedReleases": [
+    "Fallout4"
+  ]
 }
